@@ -18,14 +18,14 @@ class Score(object):
         if not isinstance(score_string, str):
             score_string = str(score_string)
         matches = re.search(self.regex, score_string)
-        if not matches:
-            return False
-        return True
+        return bool(matches)
 
     def __str__(self):
         return "{0},{1},{2}".format(self.name, self.pattern, self.example or '')
 
     def __iter__(self):
-        score_dict = dict()
-        score_dict[self.name] = dict(pattern=self.pattern, example=self.example or '')
+        score_dict = {
+            self.name: dict(pattern=self.pattern, example=self.example or '')
+        }
+
         return iter(score_dict)
