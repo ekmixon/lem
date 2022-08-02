@@ -24,7 +24,7 @@ class YumAssessor(Assessor):
     def assess(self):
         lines = []
         error_lines = []
-        
+
         command = ["yum", "updateinfo", "list", "cves"]
         p = subprocess.Popen(command,
                              stdout=subprocess.PIPE,
@@ -48,13 +48,13 @@ class YumAssessor(Assessor):
 class RpmAssessor(Assessor):
     def __init__(self, vuln_data):
         super(RpmAssessor, self).__init__()
-        self.installed_packages = dict()
+        self.installed_packages = {}
         self.vuln_data = vuln_data
 
     def _get_rpms(self):
         lines = []
         error_lines = []
-        
+
         command = ["rpm", "-qa"]
         p = subprocess.Popen(command,
                              stdout=subprocess.PIPE,
@@ -74,9 +74,11 @@ class RpmAssessor(Assessor):
         self._get_rpms()
         for cve, definition in self.vuln_data.iteritems():
             for rpm in definition['affected_packages']:
-                if rpm.name() in self.installed_packages.keys():
-                    if self.installed_packages[rpm.name()].version_less_than(rpm):
-                        self.cves.append(cve)      
+                if (
+                    rpm.name() in self.installed_packages.keys()
+                    and self.installed_packages[rpm.name()].version_less_than(rpm)
+                ):
+                    self.cves.append(cve)      
 
         self.cves = list(set(self.cves))
 
@@ -92,32 +94,21 @@ class Rpm(object):
         self.rpm = rpm
 
     def target_hw(self):
-        hardware = Rpm.target_hw_re.findall(self.rpm)
-        if hardware:
-            return hardware[0]
-        return ""
+        return hardware[0] if (hardware := Rpm.target_hw_re.findall(self.rpm)) else ""
 
     def target_sw(self):
-        software = Rpm.target_sw_re.findall(self.rpm)
-        if software:
-            return software[0]
-        return ""
+        return software[0] if (software := Rpm.target_sw_re.findall(self.rpm)) else ""
 
     def version(self):
-        version = Rpm.version_re.findall(self.rpm)
-        if version:
-            return version[0]
-        return ""
+        return version[0] if (version := Rpm.version_re.findall(self.rpm)) else ""
 
     def major(self):
-        version = Rpm.version_re.findall(self.rpm)
-        if version:
+        if version := Rpm.version_re.findall(self.rpm):
             return version[0].split('.')[0]
         return ""
 
     def minor(self):
-        version = Rpm.version_re.findall(self.rpm)
-        if version:
+        if version := Rpm.version_re.findall(self.rpm):
             try:
                 return version[0].split('.')[1]
             except IndexError:
@@ -125,8 +116,7 @@ class Rpm(object):
         return ""
 
     def micro(self):
-        version = Rpm.version_re.findall(self.rpm)
-        if version:
+        if version := Rpm.version_re.findall(self.rpm):
             try:
                 return version[0].split('.')[2]
             except IndexError:
@@ -134,23 +124,13 @@ class Rpm(object):
         return ""
 
     def update(self):
-        update = Rpm.update_re.findall(self.rpm)
-        if update:
-            return update[0]
-        return ""
+        return update[0] if (update := Rpm.update_re.findall(self.rpm)) else ""
 
     def name(self):
-        match = Rpm.name_re.search(self.rpm)
-        if match:
-            return match.group(0)
-        return ""
+        return match.group(0) if (match := Rpm.name_re.search(self.rpm)) else ""
 
     def cpe(self):
-        cpe_string = ['cpe']
-        cpe_string.append('2.3')
-        cpe_string.append('a')
-        cpe_string.append('*')
-        cpe_string.append(self.name())
+        cpe_string = ['cpe', '2.3', 'a', '*', self.name()]
         cpe_string.append(self.version())
         cpe_fs = ":".join(cpe_string) + ":*:*:*:*:*:*:*"
         return CPE(cpe_fs, CPE.VERSION_2_3)
@@ -238,8 +218,6 @@ class PacmanAssessor(Assessor):
             if not line:
                 continue
             pkgname, cves = line.replace("'", "").split(" ")
-            cves = RE_CVE.findall(cves)
-            if not cves:
-                continue
-            self.cves.extend(cves)
+            if cves := RE_CVE.findall(cves):
+                self.cves.extend(cves)
         self.cves = list(set(self.cves))

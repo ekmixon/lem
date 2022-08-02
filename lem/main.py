@@ -55,16 +55,10 @@ class Lem(object):
     def process_cve(self):
         self.configure_vulnerability_sources()
         for name, source in self.vuln_manager.readers.iteritems():
-            if self.args.names and name in self.args.names:
-                if self.args.update:
-                    source.update_cves()
-                else:
-                    FRTLogger.info(str(source))
+            if self.args.update:
+                source.update_cves()
             else:
-                if self.args.update:
-                    source.update_cves()
-                else:
-                    FRTLogger.info(str(source))
+                FRTLogger.info(str(source))
 
     def process_host(self):
         try:
@@ -92,14 +86,14 @@ class Lem(object):
         elif self.args.type == 'pacman':
             assessor = PacmanAssessor()
         assessor.assess()
-        FRTLogger.info("Discovered CVEs: {}".format(",".join(assessor.cves)))
+        FRTLogger.info(f'Discovered CVEs: {",".join(assessor.cves)}')
 
         output = curation_manager.csv(cves=assessor.cves,
                                       source=self.args.source,
                                       score_kind=self.args.kind,
                                       score_regex=self.args.score,
                                       eid=self.args.id)
-        FRTLogger.info("Curated CSV:{}".format(output if output else " Empty"))
+        FRTLogger.info(f'Curated CSV:{output or " Empty"}')
         if self.args.save_file:
             self.args.save_file.write(output)
             self.args.save_file.close()
@@ -135,7 +129,7 @@ class Lem(object):
 
         elif 'score' in self.args.sub_which:
             self.configure_score_managers()
-            if not self.args.kind in self.score_manager.scores.keys():
+            if self.args.kind not in self.score_manager.scores.keys():
                 FRTLogger.error("Score kind {0} is not valid.  Please check {1}".format(self.args.kind, self.lem_conf.path))
                 sys.exit(1)
             if not self.score_manager.is_valid(self.args.kind, self.args.value):

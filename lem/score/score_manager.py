@@ -2,7 +2,7 @@ from lem.score import Score
 
 class ScoreManager(object):
     def __init__(self):
-        self.scores = dict()
+        self.scores = {}
 
     def add_score(self, name, pattern, example=None):
         if name not in self.scores.keys():
@@ -22,8 +22,7 @@ class ScoreManager(object):
 
     def __str__(self):
         score_strings = ['name,pattern,example']
-        for _, score in self.scores.iteritems():
-            score_strings.append(str(score))
+        score_strings.extend(str(score) for _, score in self.scores.iteritems())
         return '\n'.join(score_strings)
 
     def __iter__(self):
